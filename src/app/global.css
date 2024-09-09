@@ -1,0 +1,4 @@
+@import "@mantine/core/styles.css";
+body {
+  background-color: var(--mantine-color-brand-0);
+}

@@ -5,7 +5,7 @@ export const theme = createTheme({
   headings: {
     fontFamily: "var(--font-header)",
   },
-  defaultRadius: 0,
+  defaultRadius: 2,
   white: "#fff",
   black: "#334155",
   primaryColor: "brand",
@@ -40,7 +40,6 @@ export const theme = createTheme({
     Anchor: {
       defaultProps: {
         underline: "always",
-        c: "brand",
         fw: 600,
       },
     },

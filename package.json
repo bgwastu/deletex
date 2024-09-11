@@ -3,23 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-schema": "rm -rf generated-schema/ && bun drizzle-kit generate --dialect postgresql --driver pglite --name init --schema src/database/schema.ts --out generated-schema"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.2.6",
+    "@electric-sql/pglite-repl": "^0.2.6",
     "@mantine/core": "^7.12.2",
+    "@mantine/form": "^7.12.2",
     "@mantine/hooks": "^7.12.2",
     "@mantine/notifications": "^7.12.2",
+    "@tabler/icons-react": "^3.15.0",
+    "drizzle-orm": "^0.33.0",
     "next": "14.2.8",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "tough-cookie": "^4.1.4"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "drizzle-kit": "^0.24.2",
     "eslint": "^8",
     "eslint-config-next": "14.2.8",
     "postcss": "^8.4.45",

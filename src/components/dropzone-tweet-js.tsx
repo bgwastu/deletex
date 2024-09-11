@@ -30,17 +30,6 @@ export default function DropzoneTweetJs({
     <Stack {...props}>
       {file === null ? (
         <Stack>
-          <Text>
-            Before continuing, you need to import tweets.js file from your X
-            archive.{" "}
-            <Anchor
-              target="_blank"
-              href="https://help.x.com/en/managing-your-account/how-to-download-your-x-archive"
-            >
-              See how to download it
-            </Anchor>
-            .
-          </Text>
           <Dropzone
             disabled={loading || file !== null}
             onDrop={async (files) => {
@@ -118,6 +107,17 @@ export default function DropzoneTweetJs({
               </Stack>
             </Group>
           </Dropzone>
+          <Text>
+            Before continuing, you need to import tweets.js file from your X
+            archive.{" "}
+            <Anchor
+              target="_blank"
+              href="https://help.x.com/en/managing-your-account/how-to-download-your-x-archive"
+            >
+              See how to download it
+            </Anchor>
+            .
+          </Text>
         </Stack>
       ) : (
         <Stack>

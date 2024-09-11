@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { InferSelectModel, relations } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -14,13 +14,15 @@ export const tweets = pgTable("tweets", {
   likes: integer("likes"),
   isReply: boolean("is_reply"),
   isRetweet: boolean("is_retweet"),
-  isSelfReply: boolean("is_self_reply"),
   createdAt: timestamp("created_at"),
 });
 
 export const tweetRelations = relations(tweets, ({ many }) => ({
   media: many(media),
 }));
+
+export type Tweet = InferSelectModel<typeof tweets>;
+export type TweetMedia = Tweet & { media: Media[] };
 
 export const media = pgTable("media", {
   id: varchar("id").primaryKey(),
@@ -30,7 +32,6 @@ export const media = pgTable("media", {
   }),
   previewUrl: varchar("url"),
   type: varchar("type"),
-  createdAt: timestamp("created_at"),
 });
 
 export const mediaRelations = relations(media, ({ one }) => ({
@@ -39,3 +40,5 @@ export const mediaRelations = relations(media, ({ one }) => ({
     references: [tweets.id],
   }),
 }));
+
+export type Media = InferSelectModel<typeof media>;

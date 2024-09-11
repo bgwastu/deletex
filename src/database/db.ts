@@ -28,8 +28,7 @@ export async function migrate() {
     "id" varchar PRIMARY KEY NOT NULL,
     "tweet_id" varchar,
     "url" varchar,
-    "type" varchar,
-    "created_at" timestamp
+    "type" varchar
   );
   --> statement-breakpoint
   CREATE TABLE IF NOT EXISTS "tweets" (
@@ -39,7 +38,6 @@ export async function migrate() {
     "likes" integer,
     "is_reply" boolean,
     "is_retweet" boolean,
-    "is_self_reply" boolean,
     "created_at" timestamp
   );
   --> statement-breakpoint

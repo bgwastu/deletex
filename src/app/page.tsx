@@ -1,8 +1,13 @@
 "use client";
 
+import DropzoneTweetJs from "@/components/dropzone-tweet-js";
+import { clear, db } from "@/database/db";
+import { Tweet, TweetMedia, tweets } from "@/database/schema";
 import {
   Anchor,
+  Button,
   Container,
+  Divider,
   List,
   rem,
   Stack,
@@ -11,8 +16,48 @@ import {
   Title,
 } from "@mantine/core";
 import { IconCheck, IconProgress } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import { media } from "@/database/schema";
+import { notifications } from "@mantine/notifications";
 
 export default function Home() {
+  useEffect(() => {
+    (async () => {
+      await clear();
+    })();
+  }, []);
+  const [listTweet, setListTweet] = useState<TweetMedia[] | null>(null);
+
+  async function saveTweetsToDatabase() {
+    if (listTweet === null) return;
+
+    try {
+      await db.insert(tweets).values(listTweet).execute();
+
+      // insert media
+      const mediaList = listTweet
+        .map((tweet) => tweet.media)
+        .flat()
+        // filter duplicate media
+        .filter(
+          (media, index, self) =>
+            index === self.findIndex((t) => t.id === media.id)
+        );
+      await db.insert(media).values(mediaList).execute();
+
+      notifications.show({
+        title: "Success",
+        message: "Tweets imported successfully",
+      });
+    } catch (e: any) {
+      notifications.show({
+        title: "Error",
+        message: e.message,
+        color: "red",
+      });
+    }
+  }
+
   return (
     <Container component="main" my="xl" size="sm">
       <Stack>
@@ -50,17 +95,13 @@ export default function Home() {
             </List.Item>
           </List>
         </Stack>
-        <Text>
-          Before continuing, you need to import tweets.js file from your X
-          archive.{" "}
-          <Anchor
-            target="_blank"
-            href="https://help.x.com/en/managing-your-account/how-to-download-your-x-archive"
-          >
-            See how to download it
-          </Anchor>
-          .
-        </Text>
+        <Divider my="sm" />
+        <DropzoneTweetJs setTweets={setListTweet} tweets={listTweet} />
+        {listTweet !== null && (
+          <Button size="md" onClick={saveTweetsToDatabase}>
+            Continue
+          </Button>
+        )}
       </Stack>
     </Container>
   );

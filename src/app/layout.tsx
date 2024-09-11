@@ -2,6 +2,7 @@ import { theme } from "@/theme";
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import type { Metadata } from "next";
 import { Figtree, Lora } from "next/font/google";
+import { Notifications } from "@mantine/notifications";
 import "./global.css";
 
 const headerFont = Lora({
@@ -32,7 +33,10 @@ export default function RootLayout({
         <ColorSchemeScript />
       </head>
       <body>
-        <MantineProvider theme={theme}>{children}</MantineProvider>
+        <MantineProvider theme={theme}>
+          <Notifications />
+          {children}
+        </MantineProvider>
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-import { Tweet, TweetMedia } from "@/database/schema";
+import { TweetMedia } from "@/database/schema";
 import {
   Anchor,
   BoxProps,
@@ -39,10 +39,10 @@ export default function DropzoneTweetJs({
                 console.log(tweets);
                 setFile(files[0]);
                 setTweets(tweets);
-              } catch (error: any) {
+              } catch (error) {
                 notifications.show({
                   title: "Error",
-                  message: error.message,
+                  message: (error as Error).message,
                   color: "red",
                 });
               } finally {

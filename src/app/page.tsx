@@ -2,7 +2,7 @@
 
 import DropzoneTweetJs from "@/components/dropzone-tweet-js";
 import { clear, db } from "@/database/db";
-import { Tweet, TweetMedia, tweets } from "@/database/schema";
+import { media, TweetMedia, tweets } from "@/database/schema";
 import {
   Anchor,
   Button,
@@ -15,10 +15,9 @@ import {
   ThemeIcon,
   Title,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { IconCheck, IconProgress } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { media } from "@/database/schema";
-import { notifications } from "@mantine/notifications";
 
 export default function Home() {
   useEffect(() => {
@@ -90,6 +89,7 @@ export default function Home() {
                   <IconProgress style={{ width: rem(16), height: rem(16) }} />
                 </ThemeIcon>
               }
+              c="gray.6"
             >
               Semantic search posts & likes (planned)
             </List.Item>

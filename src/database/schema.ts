@@ -1,19 +1,21 @@
 import { InferSelectModel, relations } from "drizzle-orm";
 import {
-  boolean,
   integer,
+  pgEnum,
   pgTable,
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
+
+export const typeEnum = pgEnum("type", ["tweet", "retweet", "reply"]);
+export type TweetType = "tweet" | "retweet" | "reply";
 
 export const tweets = pgTable("tweets", {
   id: varchar("id").primaryKey(),
   text: varchar("text"),
   retweet: integer("retweet"),
   likes: integer("likes"),
-  isReply: boolean("is_reply"),
-  isRetweet: boolean("is_retweet"),
+  type: typeEnum("type"),
   createdAt: timestamp("created_at"),
 });
 

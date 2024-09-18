@@ -1,4 +1,4 @@
-import { TweetMedia } from "@/database/schema";
+import { TweetMedia, TweetType } from "@/database/schema";
 import {
   Anchor,
   BoxProps,
@@ -140,19 +140,19 @@ export default function DropzoneTweetJs({
             <Text>
               Posts:{" "}
               <Text span fw={600}>
-                {tweets?.filter((t) => !t.isReply && !t.isRetweet).length} posts
+                {tweets?.filter((tweet) => tweet.type === "tweet").length}
               </Text>
             </Text>
             <Text>
               Retweets:{" "}
               <Text span fw={600}>
-                {tweets?.filter((t) => t.isRetweet).length} posts
+                {tweets?.filter((tweet) => tweet.type === "retweet").length}{" "}
               </Text>
             </Text>
             <Text>
               Replies:{" "}
               <Text span fw={600}>
-                {tweets?.filter((t) => t.isReply).length} posts
+                {tweets?.filter((tweet) => tweet.type === "reply").length}{" "}
               </Text>
             </Text>
           </Stack>
@@ -172,14 +172,22 @@ async function fileToTweets(file: File): Promise<TweetMedia[]> {
 
     return data.map((data: any) => {
       const tweet = data.tweet;
+
+      let type: TweetType = "tweet";
+
+      if (tweet.in_reply_to_status_id_str !== undefined) {
+        type = "reply";
+      } else if (tweet.full_text.startsWith("RT @")) {
+        type = "retweet";
+      }
+
       return {
         id: tweet.id_str,
         text: tweet.full_text,
         retweet: Number(tweet.retweet_count),
         likes: Number(tweet.favorite_count),
-        isReply: tweet.in_reply_to_status_id_str !== undefined,
-        isRetweet: tweet.full_text.startsWith("RT @"),
         createdAt: new Date(tweet.created_at),
+        type,
         media: [...(tweet.extended_entities?.media || [])].map(
           (media: any) => ({
             id: media.id_str,

@@ -5,7 +5,7 @@ export const theme = createTheme({
   headings: {
     fontFamily: "var(--font-header)",
   },
-  defaultRadius: 2,
+  defaultRadius: 3,
   white: "#fff",
   black: "#334155",
   primaryColor: "brand",
@@ -41,11 +41,6 @@ export const theme = createTheme({
       defaultProps: {
         underline: "always",
         fw: 600,
-      },
-    },
-    Paper: {
-      defaultProps: {
-        bg: "brand.1",
       },
     },
     SegmentedControl: {

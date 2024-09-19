@@ -37,3 +37,7 @@ next-env.d.ts
 
 # generated schema
 generated-schema/
+
+## Panda
+src/styled-system
+src/styled-system-studio

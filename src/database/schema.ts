@@ -1,5 +1,6 @@
-import { InferSelectModel, relations } from "drizzle-orm";
+import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -10,14 +11,23 @@ import {
 export const typeEnum = pgEnum("type", ["tweet", "retweet", "reply"]);
 export type TweetType = "tweet" | "retweet" | "reply";
 
-export const tweets = pgTable("tweets", {
-  id: varchar("id").primaryKey(),
-  text: varchar("text"),
-  retweet: integer("retweet"),
-  likes: integer("likes"),
-  type: typeEnum("type"),
-  createdAt: timestamp("created_at"),
-});
+export const tweets = pgTable(
+  "tweets",
+  {
+    id: varchar("id").primaryKey(),
+    text: varchar("text"),
+    retweet: integer("retweet"),
+    likes: integer("likes"),
+    type: typeEnum("type"),
+    createdAt: timestamp("created_at"),
+  },
+  (table) => ({
+    textSearchIndex: index("text_search_index").using(
+      "gin",
+      sql`to_tsvector('english', ${table.text})`
+    ),
+  })
+);
 
 export const tweetRelations = relations(tweets, ({ many }) => ({
   media: many(media),

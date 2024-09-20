@@ -13,6 +13,7 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.2.6",
     "@electric-sql/pglite-repl": "^0.2.6",
+    "@mantine/code-highlight": "^7.12.2",
     "@mantine/core": "^7.12.2",
     "@mantine/dates": "^7.12.2",
     "@mantine/dropzone": "^7.12.2",

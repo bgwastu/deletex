@@ -1,5 +1,6 @@
 "use client";
 
+import GenerateDeleteScriptButton from "@/components/generate-delete-script-button";
 import { media, TweetMedia, tweets } from "@/database/schema";
 import { css } from "@/styled-system/css";
 import {
@@ -277,17 +278,20 @@ export default function Component() {
             </Popover>
           </Flex>
           {selectedTweetId.length > 0 && (
-            <Flex align="center" gap="sm">
-              <Button
-                onClick={isSelectAll ? clearAll : selectAll}
-                color={isSelectAll ? "red" : "brand"}
-              >
-                {isSelectAll ? "Clear all" : "Select all"}
-              </Button>
-              <Text
-                c="dimmed"
-                size="sm"
-              >{`Selected: ${selectedTweetId.length}`}</Text>
+            <Flex justify="space-between">
+              <Flex align="center" gap="sm">
+                <Button
+                  onClick={isSelectAll ? clearAll : selectAll}
+                  color={isSelectAll ? "red" : "brand"}
+                >
+                  {isSelectAll ? "Clear all" : "Select all"}
+                </Button>
+                <Text
+                  c="dimmed"
+                  size="sm"
+                >{`Selected: ${selectedTweetId.length}`}</Text>
+              </Flex>
+              <GenerateDeleteScriptButton tweetIds={selectedTweetId} />
             </Flex>
           )}
         </Stack>

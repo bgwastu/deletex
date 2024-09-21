@@ -1,8 +1,8 @@
 "use client";
 
+import { CodeHighlight } from "@mantine/code-highlight";
 import {
   Button,
-  Code,
   CopyButton,
   Modal,
   ScrollArea,
@@ -10,13 +10,7 @@ import {
   Text,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { CodeHighlight } from "@mantine/code-highlight";
-import {
-  IconBrandJavascript,
-  IconCheck,
-  IconCopy,
-  IconFileTypeJs,
-} from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconFileTypeJs } from "@tabler/icons-react";
 
 export default function GenerateDeleteScriptButton({
   tweetIds,
@@ -29,11 +23,23 @@ export default function GenerateDeleteScriptButton({
     <div>
       <Modal opened={opened} onClose={close} title="Delete Script" size="lg">
         <Stack>
-          <Text>
-            Copy this script and paste it into your browser's console to delete
-            the selected tweets.
-          </Text>
-          <ScrollArea h={350} type="always" scrollbars="y" offsetScrollbars>
+          <Stack gap="0">
+            <Text size="sm" c="dimmed">
+              STEP 1
+            </Text>
+            <Text>{`
+            Open your browser's console (usually by pressing F12 or
+            right-clicking on the page and selecting "Inspect" or "Inspect
+            Element", then navigating to the "Console" tab).
+          `}</Text>
+          </Stack>
+          <Stack gap="0">
+            <Text size="sm" c="dimmed">
+              STEP 2
+            </Text>
+            <Text>Paste the script into the console and press Enter.</Text>
+          </Stack>
+          <ScrollArea h={300} type="always" scrollbars="y" offsetScrollbars>
             <CodeHighlight code={generate(tweetIds)} language="js" w={580} />
           </ScrollArea>
           <CopyButton value={generate(tweetIds)}>
@@ -53,9 +59,8 @@ export default function GenerateDeleteScriptButton({
       </Modal>
       <Button
         onClick={open}
-        variant="light"
         leftSection={<IconFileTypeJs size={18} />}
-        color="red"
+        color="brand"
       >
         Generate Delete Script
       </Button>

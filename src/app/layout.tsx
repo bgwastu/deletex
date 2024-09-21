@@ -18,8 +18,8 @@ const textFont = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "twt - X (formerly Twitter) all-in-one toolkit",
-  description: "X (formerly Twitter) all-in-one toolkit by @bgwastu.",
+  title: "DeleteX",
+  description: "Selectively delete your content on X (formerly Twitter).",
 };
 
 export default function RootLayout({

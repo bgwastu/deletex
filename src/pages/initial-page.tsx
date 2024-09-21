@@ -5,19 +5,18 @@ import { db } from "@/database/db";
 import { media, TweetMedia, tweets } from "@/database/schema";
 import { appStateAtom } from "@/state";
 import {
+  Button,
   Container,
-  Stack,
-  Title,
-  Anchor,
+  Divider,
   List,
+  rem,
+  Stack,
   Text,
   ThemeIcon,
-  rem,
-  Divider,
-  Button,
+  Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconCheck, IconProgress } from "@tabler/icons-react";
+import { IconCheck } from "@tabler/icons-react";
 import { useSetAtom } from "jotai";
 import { useState } from "react";
 
@@ -64,11 +63,8 @@ export default function InitialPage() {
     <Container component="main" my="xl" size="sm">
       <Stack>
         <Stack gap="xs">
-          <Title>twt.wastu.net</Title>
-          <Text>
-            X (formerly Twitter) all-in-one toolkit by{" "}
-            <Anchor href="https://x.com/@bgwastu">@bgwastu</Anchor>.
-          </Text>
+          <Title>DeleteX</Title>
+          <Text>Selectively delete your content on X (formerly Twitter).</Text>
         </Stack>
         <Stack gap="xs">
           <Title order={2}>Features</Title>
@@ -82,20 +78,13 @@ export default function InitialPage() {
               </ThemeIcon>
             }
           >
-            <List.Item>Full-text search for posts</List.Item>
             <List.Item>
-              Deleting posts using scripts (no auth/token required)
+              Deleting content using scripts (no auth/token required)
             </List.Item>
-            <List.Item
-              icon={
-                <ThemeIcon color="gray.6" size={24} radius="xl">
-                  <IconProgress style={{ width: rem(16), height: rem(16) }} />
-                </ThemeIcon>
-              }
-              c="gray.6"
-            >
-              Semantic search posts & likes (planned)
+            <List.Item>
+              Powerful filtering options (date, media, etc.)
             </List.Item>
+            <List.Item>Full-text search</List.Item>
           </List>
         </Stack>
         <Divider my="sm" />

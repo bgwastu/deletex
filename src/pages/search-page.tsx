@@ -1,7 +1,9 @@
 "use client";
 
 import GenerateDeleteScriptButton from "@/components/generate-delete-script-button";
+import { clear } from "@/database/db";
 import { media, TweetMedia, tweets } from "@/database/schema";
+import { appStateAtom } from "@/state";
 import { css } from "@/styled-system/css";
 import {
   Anchor,
@@ -25,8 +27,12 @@ import {
   ThemeIcon,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
-import { isNotEmpty, useForm } from "@mantine/form";
-import { useDebouncedCallback, usePagination } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
+import {
+  useDebouncedCallback,
+  useDisclosure,
+  usePagination,
+} from "@mantine/hooks";
 import {
   IconArticle,
   IconFilter,
@@ -37,6 +43,7 @@ import {
   IconRepeat,
 } from "@tabler/icons-react";
 import { and, desc, eq, exists, gte, lte, or, sql } from "drizzle-orm";
+import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 
 const PAGE_SIZE = 20;
@@ -52,6 +59,10 @@ export default function Component() {
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [selectedTweetId, setSelectedTweetId] = useState<string[]>([]);
   const pagination = usePagination({ total: 10, initialPage: 1 });
+  const [query, setQuery] = useState("");
+  const [filterOpened, { close: closeFilter, open: openFilter }] =
+    useDisclosure(false);
+  const setAppState = useSetAtom(appStateAtom);
 
   const form = useForm({
     initialValues: {
@@ -62,8 +73,10 @@ export default function Component() {
       )[],
       startDate: null as Date | null,
       endDate: null as Date | null,
-      minLikes: 0,
-      minRetweet: 0,
+      minLikes: null as number | null,
+      maxLikes: null as number | null,
+      minRetweet: null as number | null,
+      maxRetweet: null as number | null,
       containsMedia: false,
     },
     validate: {
@@ -75,8 +88,6 @@ export default function Component() {
         value && values.startDate && value < values.startDate
           ? "End date must be after start date"
           : null,
-      minLikes: isNotEmpty("Minimum likes is required"),
-      minRetweet: isNotEmpty("Minimum repost is required"),
     },
   });
 
@@ -92,19 +103,33 @@ export default function Component() {
       startDate,
       endDate,
       minLikes,
+      maxLikes,
       minRetweet,
+      maxRetweet,
       tweetType,
       containsMedia,
     } = form.values;
     if (!db) return;
+
+    console.log(form.values);
 
     const mediaSubquery = db
       .select()
       .from(media)
       .where(eq(media.tweetId, tweets.id));
     return and(
-      gte(tweets.likes, minLikes),
-      gte(tweets.retweet, minRetweet),
+      minLikes !== null && typeof minLikes !== "string"
+        ? gte(tweets.likes, minLikes)
+        : undefined,
+      maxLikes !== null && typeof maxLikes !== "string"
+        ? lte(tweets.likes, maxLikes)
+        : undefined,
+      minRetweet !== null && typeof minRetweet !== "string"
+        ? gte(tweets.retweet, minRetweet)
+        : undefined,
+      maxRetweet !== null && typeof maxRetweet !== "string"
+        ? lte(tweets.retweet, maxRetweet)
+        : undefined,
       startDate ? gte(tweets.createdAt, startDate) : undefined,
       endDate ? lte(tweets.createdAt, endDate) : undefined,
       tweetType.length > 0
@@ -153,6 +178,7 @@ export default function Component() {
   };
 
   const applyFilter = async () => {
+    closeFilter();
     pagination.setPage(1);
     const res = await getListTweet(1);
     if (res) setListTweet(res);
@@ -178,6 +204,7 @@ export default function Component() {
       orderBy: desc(tweets.createdAt),
     });
     if (res) setListTweet(res);
+    clearAll(); // Reset select all state on new search
   }, 500);
 
   const toggleTweetSelection = (tweetId: string) => {
@@ -200,6 +227,13 @@ export default function Component() {
     }
   };
 
+  const resetData = async () => {
+    const confirmation = confirm("Are you sure you want to reset all data?");
+    if (!confirmation) return;
+    await clear();
+    setAppState("initial");
+  };
+
   return (
     <Container my="xl">
       <Stack>
@@ -208,18 +242,28 @@ export default function Component() {
             <TextInput
               size="md"
               placeholder="Search posts..."
+              value={query}
               flex={1}
-              onChange={(e) => handleSearch(e.currentTarget.value)}
+              onChange={(e) => {
+                setQuery(e.currentTarget.value);
+                handleSearch(e.currentTarget.value);
+              }}
             />
             <Popover
-              width={400}
+              width={350}
               trapFocus
               withArrow
               shadow="md"
               clickOutsideEvents={[]}
+              opened={filterOpened}
             >
               <Popover.Target>
-                <Button size="md" leftSection={<IconFilter size={14} />}>
+                <Button
+                  size="md"
+                  leftSection={<IconFilter size={14} />}
+                  variant="outline"
+                  onClick={filterOpened ? closeFilter : openFilter}
+                >
                   Filter
                 </Button>
               </Popover.Target>
@@ -238,33 +282,68 @@ export default function Component() {
                         <Group gap="sm" grow>
                           <DatePickerInput
                             placeholder="From"
+                            valueFormat="DD/MM/YYYY"
                             clearable
                             {...form.getInputProps("startDate")}
                           />
                           <DatePickerInput
                             placeholder="To"
+                            valueFormat="DD/MM/YYYY"
                             clearable
                             {...form.getInputProps("endDate")}
                           />
                         </Group>
                       </Input.Wrapper>
                     </Stack>
-                    <NumberInput
-                      label="Minimum likes"
-                      min={0}
-                      step={1}
-                      leftSection={<IconHeart size={14} />}
-                      hideControls
-                      {...form.getInputProps("minLikes")}
-                    />
-                    <NumberInput
-                      label="Minimum repost"
-                      min={0}
-                      step={1}
-                      leftSection={<IconRepeat size={14} />}
-                      hideControls
-                      {...form.getInputProps("minRetweet")}
-                    />
+                    <Input.Wrapper label="Likes Range">
+                      <Flex gap="sm" align="start">
+                        <NumberInput
+                          aria-label="Minimum likes"
+                          flex={1}
+                          min={0}
+                          step={1}
+                          placeholder="Minimum"
+                          leftSection={<IconHeart size={14} />}
+                          hideControls
+                          {...form.getInputProps("minLikes")}
+                        />
+                        <NumberInput
+                          aria-label="Maximum likes"
+                          placeholder="Maximum"
+                          flex={1}
+                          min={0}
+                          step={1}
+                          defaultValue={null}
+                          leftSection={<IconHeart size={14} />}
+                          hideControls
+                          {...form.getInputProps("maxLikes")}
+                        />
+                      </Flex>
+                    </Input.Wrapper>
+                    <Input.Wrapper label="Repost Range">
+                      <Flex gap="sm" align="start">
+                        <NumberInput
+                          aria-label="Minimum likes"
+                          flex={1}
+                          min={0}
+                          step={1}
+                          placeholder="Minimum"
+                          leftSection={<IconRepeat size={14} />}
+                          hideControls
+                          {...form.getInputProps("minRetweet")}
+                        />
+                        <NumberInput
+                          aria-label="Maximum reposts"
+                          placeholder="Maximum"
+                          flex={1}
+                          min={0}
+                          leftSection={<IconRepeat size={14} />}
+                          step={1}
+                          hideControls
+                          {...form.getInputProps("maxRetweet")}
+                        />
+                      </Flex>
+                    </Input.Wrapper>
                     <Checkbox
                       label="Contains media"
                       {...form.getInputProps("containsMedia", {
@@ -278,13 +357,15 @@ export default function Component() {
             </Popover>
           </Flex>
           {selectedTweetId.length > 0 && (
-            <Flex justify="space-between">
+            <Group justify="space-between">
               <Flex align="center" gap="sm">
                 <Button
                   onClick={isSelectAll ? clearAll : selectAll}
                   color={isSelectAll ? "red" : "brand"}
+                  variant={isSelectAll ? "light" : "filled"}
+                  hidden={query !== ""}
                 >
-                  {isSelectAll ? "Clear all" : "Select all"}
+                  {isSelectAll ? "Clear all selection" : "Select all"}
                 </Button>
                 <Text
                   c="dimmed"
@@ -292,7 +373,7 @@ export default function Component() {
                 >{`Selected: ${selectedTweetId.length}`}</Text>
               </Flex>
               <GenerateDeleteScriptButton tweetIds={selectedTweetId} />
-            </Flex>
+            </Group>
           )}
         </Stack>
         <Stack>
@@ -431,6 +512,9 @@ export default function Component() {
           </Button>
         )}
       </Stack>
+      <Button variant="subtle" onClick={resetData} mt="xl" color="red">
+        Reset all the data
+      </Button>
     </Container>
   );
 }

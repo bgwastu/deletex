@@ -1,8 +1,8 @@
 "use client";
 
 import { migrate } from "@/database/db";
-import InitialPage from "@/pages/initial-page";
-import SearchPage from "@/pages/search-page";
+import InitialPage from "@/screens/initial-page";
+import SearchPage from "@/screens/search-page";
 import { appStateAtom } from "@/state";
 import { Loader, Stack, Text } from "@mantine/core";
 import { sql } from "drizzle-orm";

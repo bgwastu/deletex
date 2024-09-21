@@ -3,6 +3,7 @@ import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import type { Metadata } from "next";
 import { Figtree, Lora } from "next/font/google";
 import { Notifications } from "@mantine/notifications";
+import { Analytics } from "@vercel/analytics/react";
 import "./global.css";
 
 const headerFont = Lora({
@@ -37,6 +38,7 @@ export default function RootLayout({
           <Notifications />
           {children}
         </MantineProvider>
+        <Analytics />
       </body>
     </html>
   );

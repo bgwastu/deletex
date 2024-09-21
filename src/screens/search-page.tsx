@@ -272,7 +272,7 @@ export default function Component() {
                 <form onSubmit={form.onSubmit(applyFilter)}>
                   <Stack>
                     <MultiSelect
-                      label="Post Type"
+                      label="Content Type"
                       data={TWEET_TYPES}
                       clearable
                       size="sm"

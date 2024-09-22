@@ -36,7 +36,6 @@ export default function DropzoneTweetJs({
               setLoading(true);
               try {
                 const tweets = await fileToTweets(files[0]);
-                console.log(tweets);
                 setFile(files[0]);
                 setTweets(tweets);
               } catch (error) {
@@ -59,7 +58,6 @@ export default function DropzoneTweetJs({
               });
             }}
             multiple={false}
-            accept={["application/javascript", "text/javascript", "text/plain"]}
           >
             <Group
               justify="center"

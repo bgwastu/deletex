@@ -23,6 +23,7 @@ const nextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
+  missingSuspenseWithCSRBailout: false,
 };
 
 export default nextConfig;

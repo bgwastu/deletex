@@ -3,6 +3,7 @@ const nextConfig = {
   swcMinify: false,
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
+    missingSuspenseWithCSRBailout: false,
   },
   transpilePackages: ["@electric-sql/pglite-repl", "@electric-sql/pglite"],
   async rewrites() {
@@ -23,7 +24,6 @@ const nextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
-  missingSuspenseWithCSRBailout: false,
 };
 
 export default nextConfig;

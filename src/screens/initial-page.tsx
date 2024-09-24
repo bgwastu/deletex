@@ -49,9 +49,10 @@ export default function InitialPage() {
       });
       setAppState("ready");
     } catch (e: any) {
+      console.error("Insertion error:", e);
       notifications.show({
         title: "Error",
-        message: e.message,
+        message: "Failed to save data to database. See console for details.",
         color: "red",
       });
     } finally {

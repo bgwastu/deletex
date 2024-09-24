@@ -39,9 +39,11 @@ export default function DropzoneTweetJs({
                 setFile(files[0]);
                 setTweets(tweets);
               } catch (error) {
+                console.error("Error processing file:", error);
                 notifications.show({
                   title: "Error",
-                  message: (error as Error).message,
+                  message:
+                    "Failed to process the file. Please check the console for more details.",
                   color: "red",
                 });
               } finally {

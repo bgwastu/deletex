@@ -5,6 +5,7 @@ import { Figtree, Lora } from "next/font/google";
 import { Notifications } from "@mantine/notifications";
 import { Analytics } from "@vercel/analytics/react";
 import "./global.css";
+import PostHogPageView from "@/components/posthog-pageview";
 
 const headerFont = Lora({
   subsets: ["latin"],
@@ -34,6 +35,7 @@ export default function RootLayout({
         <ColorSchemeScript />
       </head>
       <body>
+        <PostHogPageView />
         <MantineProvider theme={theme}>
           <Notifications />
           {children}

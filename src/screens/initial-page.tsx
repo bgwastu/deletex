@@ -30,7 +30,14 @@ export default function InitialPage() {
     setLoading(true);
 
     try {
-      await db.insert(tweets).values(listTweet).execute();
+      // Chunk tweets for insertion
+      const MAX_INSERT_BATCH_SIZE = 1000;
+      for (let i = 0; i < listTweet.length; i += MAX_INSERT_BATCH_SIZE) {
+        await db
+          .insert(tweets)
+          .values(listTweet.slice(i, i + MAX_INSERT_BATCH_SIZE))
+          .execute();
+      }
 
       // insert media
       const mediaList = listTweet
@@ -41,7 +48,14 @@ export default function InitialPage() {
           (media, index, self) =>
             index === self.findIndex((t) => t.id === media.id)
         );
-      await db.insert(media).values(mediaList).execute();
+
+      // Chunk media for insertion
+      for (let i = 0; i < mediaList.length; i += MAX_INSERT_BATCH_SIZE) {
+        await db
+          .insert(media)
+          .values(mediaList.slice(i, i + MAX_INSERT_BATCH_SIZE))
+          .execute();
+      }
 
       notifications.show({
         title: "Success",

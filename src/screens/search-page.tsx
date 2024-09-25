@@ -112,8 +112,6 @@ export default function Component() {
     } = form.values;
     if (!db) return;
 
-    console.log(form.values);
-
     const mediaSubquery = db
       .select()
       .from(media)

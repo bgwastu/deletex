@@ -42,7 +42,7 @@ import {
   IconPlayerPlayFilled,
   IconRepeat,
 } from "@tabler/icons-react";
-import { and, desc, eq, exists, gte, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, exists, gte, gt, lte, or, sql } from "drizzle-orm";
 import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 
@@ -92,7 +92,7 @@ export default function Component() {
   });
 
   useEffect(() => {
-    getListTweet(1).then((res) => {
+    getListTweet().then((res) => {
       if (res) setListTweet(res);
       setLoading(false);
     });
@@ -138,13 +138,18 @@ export default function Component() {
     );
   };
 
-  const getListTweet = async (page: number) => {
+  const getListTweet = async (cursor?: string, query?: string) => {
     setLoading(true);
     const res = await db?.query.tweets.findMany({
       limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
+      where: cursor
+        ? and(
+            gt(tweets.id, cursor),
+            getWhereClause(),
+            query ? eq(tweets.text, query) : undefined
+          )
+        : and(getWhereClause(), query ? eq(tweets.text, query) : undefined),
       with: { media: true },
-      where: getWhereClause(),
       orderBy: desc(tweets.createdAt),
     });
     setLoading(false);
@@ -170,8 +175,8 @@ export default function Component() {
 
   const loadMore = async () => {
     setLoading(true);
-    pagination.next();
-    const res = await getListTweet(pagination.active + 1);
+    const lastTweet = listTweet[listTweet.length - 1]; // Get the last tweet for cursor
+    const res = await getListTweet(lastTweet.id); // Pass the last tweet's id as cursor
     if (res) setListTweet([...listTweet, ...res]);
     setLoading(false);
   };
@@ -179,14 +184,14 @@ export default function Component() {
   const applyFilter = async () => {
     closeFilter();
     pagination.setPage(1);
-    const res = await getListTweet(1);
+    const res = await getListTweet();
     if (res) setListTweet(res);
     setLoading(false);
   };
 
   const handleSearch = useDebouncedCallback(async (keyword: string) => {
     if (keyword === "") {
-      const res = await getListTweet(1);
+      const res = await getListTweet();
       if (res) setListTweet(res);
       return;
     }
@@ -199,7 +204,6 @@ export default function Component() {
       ),
       with: { media: true },
       limit: PAGE_SIZE,
-      offset: 0,
       orderBy: desc(tweets.createdAt),
     });
     if (res) setListTweet(res);

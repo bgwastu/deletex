@@ -1,11 +1,10 @@
 import { theme } from "@/theme";
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import type { Metadata } from "next";
 import { Figtree, Lora } from "next/font/google";
-import { Notifications } from "@mantine/notifications";
-import { Analytics } from "@vercel/analytics/react";
 import "./global.css";
-import PostHogPageView from "@/components/posthog-pageview";
+import { PHProvider } from "./providers";
 
 const headerFont = Lora({
   subsets: ["latin"],
@@ -35,12 +34,12 @@ export default function RootLayout({
         <ColorSchemeScript />
       </head>
       <body>
-        <PostHogPageView />
-        <MantineProvider theme={theme}>
-          <Notifications />
-          {children}
-        </MantineProvider>
-        <Analytics />
+        <PHProvider>
+          <MantineProvider theme={theme}>
+            <Notifications />
+            {children}
+          </MantineProvider>
+        </PHProvider>
       </body>
     </html>
   );

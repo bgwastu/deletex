@@ -3,7 +3,6 @@ const nextConfig = {
   swcMinify: false,
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
-    missingSuspenseWithCSRBailout: false,
   },
   transpilePackages: ["@electric-sql/pglite-repl", "@electric-sql/pglite"],
   async rewrites() {

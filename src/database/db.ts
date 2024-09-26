@@ -1,19 +1,24 @@
 /* eslint-disable no-var */
 /* eslint-disable prefer-const */
-import { PGlite } from "@electric-sql/pglite";
+import { PGliteWorker } from "@electric-sql/pglite/worker";
 import { drizzle, PgliteDatabase } from "drizzle-orm/pglite";
 import * as schema from "./schema";
 
 declare global {
   var db: PgliteDatabase<typeof schema> | undefined;
-  var client: PGlite | undefined;
+  var client: PGliteWorker | undefined;
 }
 
-if (!global.client) global.client = new PGlite("idb://twt-data");
-export let client: PGlite;
+if (!global.client)
+  global.client = new PGliteWorker(
+    new Worker(new URL("../app/pglite-worker.ts", import.meta.url), {
+      type: "module",
+    })
+  );
+export let client: PGliteWorker;
 client = global.client;
 
-if (!global.db) global.db = drizzle(client, { schema });
+if (!global.db) global.db = drizzle(client as any, { schema });
 export let db: PgliteDatabase<typeof schema>;
 db = global.db;
 

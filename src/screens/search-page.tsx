@@ -28,11 +28,8 @@ import {
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import {
-  useDebouncedCallback,
-  useDisclosure,
-  usePagination,
-} from "@mantine/hooks";
+import { useDebouncedCallback, useDisclosure } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
 import {
   IconArticle,
   IconFilter,
@@ -42,7 +39,7 @@ import {
   IconPlayerPlayFilled,
   IconRepeat,
 } from "@tabler/icons-react";
-import { and, desc, eq, exists, gte, gt, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, exists, gte, lte, or, sql } from "drizzle-orm";
 import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 
@@ -54,11 +51,12 @@ const TWEET_TYPES = [
 ];
 
 export default function Component() {
-  const [loading, setLoading] = useState(true);
+  const [loadingState, setLoadingState] = useState<
+    "initial" | "pagination" | "filter" | "reset" | "select_all" | null
+  >(null);
   const [listTweet, setListTweet] = useState<TweetMedia[]>([]);
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [selectedTweetId, setSelectedTweetId] = useState<string[]>([]);
-  const pagination = usePagination({ total: 10, initialPage: 1 });
   const [query, setQuery] = useState("");
   const [filterOpened, { close: closeFilter, open: openFilter }] =
     useDisclosure(false);
@@ -92,9 +90,10 @@ export default function Component() {
   });
 
   useEffect(() => {
+    setLoadingState("initial");
     getListTweet().then((res) => {
       if (res) setListTweet(res);
-      setLoading(false);
+      setLoadingState(null);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -138,34 +137,33 @@ export default function Component() {
     );
   };
 
-  const getListTweet = async (cursor?: string, query?: string) => {
-    setLoading(true);
+  const getListTweet = async (cursor?: Date, query?: string, columns?: any) => {
+    const whereClause = getWhereClause();
+    const searchClause = query
+      ? sql`to_tsvector('english', ${tweets.text}) @@ plainto_tsquery('english', ${query})`
+      : undefined;
+    const cursorClause = cursor ? lte(tweets.createdAt, cursor) : undefined; // Change to use createdAt
+
     const res = await db?.query.tweets.findMany({
+      columns,
       limit: PAGE_SIZE,
-      where: cursor
-        ? and(
-            gt(tweets.id, cursor),
-            getWhereClause(),
-            query ? eq(tweets.text, query) : undefined
-          )
-        : and(getWhereClause(), query ? eq(tweets.text, query) : undefined),
+      where: and(cursorClause, whereClause, searchClause),
       with: { media: true },
       orderBy: desc(tweets.createdAt),
     });
-    setLoading(false);
-    return res;
+    return res as any[];
   };
 
   const selectAll = async () => {
-    const tweetIds = await db?.query.tweets.findMany({
-      columns: { id: true },
-      where: getWhereClause(),
-      orderBy: desc(tweets.createdAt),
+    setLoadingState("select_all");
+    const tweetIds = await getListTweet(undefined, undefined, {
+      id: true,
     });
     if (tweetIds) {
       setSelectedTweetId(tweetIds.map((tweet) => tweet.id));
       setIsSelectAll(true);
     }
+    setLoadingState(null);
   };
 
   const clearAll = () => {
@@ -174,19 +172,26 @@ export default function Component() {
   };
 
   const loadMore = async () => {
-    setLoading(true);
+    setLoadingState("pagination");
     const lastTweet = listTweet[listTweet.length - 1]; // Get the last tweet for cursor
-    const res = await getListTweet(lastTweet.id); // Pass the last tweet's id as cursor
-    if (res) setListTweet([...listTweet, ...res]);
-    setLoading(false);
+    const res = await getListTweet(lastTweet.createdAt ?? undefined); // Pass the last tweet's createdAt as cursor
+    if (res) {
+      setListTweet([...listTweet, ...res]);
+    } else {
+      notifications.show({
+        title: "No more content",
+        message: "You have reached the end of the contents.",
+      });
+    }
+    setLoadingState(null);
   };
 
   const applyFilter = async () => {
-    closeFilter();
-    pagination.setPage(1);
+    setLoadingState("filter");
     const res = await getListTweet();
     if (res) setListTweet(res);
-    setLoading(false);
+    setLoadingState(null);
+    closeFilter();
   };
 
   const handleSearch = useDebouncedCallback(async (keyword: string) => {
@@ -197,15 +202,7 @@ export default function Component() {
     }
 
     setListTweet([]);
-    const res = await db?.query.tweets.findMany({
-      where: or(
-        sql`to_tsvector('english', ${tweets.text}) @@ plainto_tsquery('english', ${keyword})`,
-        sql`regexp_like(${tweets.text}, ${keyword}, 'i')`
-      ),
-      with: { media: true },
-      limit: PAGE_SIZE,
-      orderBy: desc(tweets.createdAt),
-    });
+    const res = await getListTweet(undefined, keyword);
     if (res) setListTweet(res);
     clearAll(); // Reset select all state on new search
   }, 500);
@@ -231,11 +228,22 @@ export default function Component() {
   };
 
   const resetData = async () => {
+    setLoadingState("reset");
     const confirmation = confirm("Are you sure you want to reset all data?");
     if (!confirmation) return;
     await clear();
     setAppState("initial");
+    setLoadingState(null);
   };
+
+  if (loadingState === "initial") {
+    return (
+      <Stack mih="99vh" align="center" justify="center">
+        <Loader />
+        <Text>Load the data, please wait...</Text>
+      </Stack>
+    );
+  }
 
   return (
     <Container my="xl">
@@ -353,7 +361,9 @@ export default function Component() {
                         type: "checkbox",
                       })}
                     />
-                    <Button type="submit">Apply Filters</Button>
+                    <Button type="submit" loading={loadingState === "filter"}>
+                      Apply Filters
+                    </Button>
                   </Stack>
                 </form>
               </Popover.Dropdown>
@@ -367,13 +377,14 @@ export default function Component() {
                   color={isSelectAll ? "red" : "brand"}
                   variant={isSelectAll ? "light" : "filled"}
                   hidden={query !== ""}
+                  loading={loadingState === "select_all"}
                 >
                   {isSelectAll ? "Clear all selection" : "Select all"}
                 </Button>
                 <Text
                   c="dimmed"
                   size="sm"
-                >{`Selected: ${selectedTweetId.length}`}</Text>
+                >{`Selected: ${selectedTweetId.length} (Max: 10000)`}</Text>
               </Flex>
               <GenerateDeleteScriptButton tweetIds={selectedTweetId} />
             </Group>
@@ -505,15 +516,13 @@ export default function Component() {
             </Checkbox.Card>
           ))}
         </Stack>
-        {loading ? (
-          <Center>
-            <Loader />
-          </Center>
-        ) : (
-          <Button onClick={loadMore} hidden={listTweet.length < 20}>
-            Load more
-          </Button>
-        )}
+        <Button
+          onClick={loadMore}
+          hidden={listTweet.length < 20}
+          loading={loadingState === "pagination"}
+        >
+          Load more
+        </Button>
       </Stack>
       <Button variant="subtle" onClick={resetData} mt="xl" color="red">
         Reset all the data

@@ -11,6 +11,7 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconCheck, IconCopy, IconFileTypeJs } from "@tabler/icons-react";
+import { useState } from "react";
 
 export default function GenerateDeleteScriptButton({
   tweetIds,
@@ -18,6 +19,7 @@ export default function GenerateDeleteScriptButton({
   tweetIds: string[];
 }) {
   const [opened, { open, close }] = useDisclosure(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <div>
@@ -58,9 +60,14 @@ export default function GenerateDeleteScriptButton({
         </Stack>
       </Modal>
       <Button
-        onClick={open}
+        onClick={() => {
+          setIsLoading(true);
+          open();
+          setIsLoading(false);
+        }}
         leftSection={<IconFileTypeJs size={18} />}
         color="brand"
+        loading={isLoading}
       >
         Generate Delete Script
       </Button>

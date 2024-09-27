@@ -42,7 +42,8 @@ import {
 } from "@tabler/icons-react";
 import { and, desc, eq, exists, gte, lt, lte, or, sql } from "drizzle-orm";
 import { useSetAtom } from "jotai";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
 const PAGE_SIZE = 20;
 const TWEET_TYPES = [
   { value: "tweet", label: "Post" },
@@ -50,23 +51,17 @@ const TWEET_TYPES = [
   { value: "reply", label: "Reply" },
 ];
 
-export default function Component() {
+export default function SearchPage() {
   const [loadingState, setLoadingState] = useState<
     "initial" | "pagination" | "filter" | "reset" | "select_all" | null
-  >(null);
+  >("initial");
   const [listTweet, setListTweet] = useState<TweetMedia[]>([]);
   const [selectedTweetId, setSelectedTweetId] = useState<string[]>([]);
-
   const [query, setQuery] = useState("");
   const [filterOpened, { close: closeFilter, open: openFilter }] =
     useDisclosure(false);
   const setAppState = useSetAtom(appStateAtom);
   const [totalPossibleTweet, setTotalPossibleTweet] = useState(0);
-  const isSelectAll =
-    (listTweet.length > 0 &&
-      loadingState === null &&
-      listTweet.every((tweet) => selectedTweetId.includes(tweet.id))) ||
-    selectedTweetId.length === totalPossibleTweet;
 
   const form = useForm({
     initialValues: {
@@ -91,16 +86,16 @@ export default function Component() {
     },
   });
 
-  useEffect(() => {
-    setLoadingState("initial");
-    getListTweet().then((res) => {
-      if (res) setListTweet(res);
-      setLoadingState(null);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const isSelectAll = useMemo(
+    () =>
+      (listTweet.length > 0 &&
+        loadingState === null &&
+        listTweet.every((tweet) => selectedTweetId.includes(tweet.id))) ||
+      selectedTweetId.length === totalPossibleTweet,
+    [listTweet, loadingState, selectedTweetId, totalPossibleTweet]
+  );
 
-  const getWhereClause = () => {
+  const getWhereClause = useCallback(() => {
     const {
       startDate,
       endDate,
@@ -137,57 +132,60 @@ export default function Component() {
         : undefined,
       containsMedia ? exists(mediaSubquery) : undefined
     );
-  };
+  }, [form.values]);
 
-  const getListTweet = async (
-    cursor?: Date,
-    query?: string,
-    columns?: any,
-    pageSize: number = PAGE_SIZE,
-    withMedia: boolean = true,
-    countResult: boolean = true
-  ) => {
-    const whereClause = getWhereClause();
-    const searchClause = query
-      ? sql`to_tsvector('english', ${tweets.text}) @@ plainto_tsquery('english', ${query})`
-      : undefined;
-    const cursorClause = cursor ? lt(tweets.createdAt, cursor) : undefined; // Change to use createdAt
+  const getListTweet = useCallback(
+    async (
+      cursor?: Date,
+      query?: string,
+      columns?: any,
+      pageSize: number = PAGE_SIZE,
+      withMedia: boolean = true,
+      countResult: boolean = true
+    ) => {
+      const whereClause = getWhereClause();
+      const searchClause = query
+        ? sql`to_tsvector('english', ${tweets.text}) @@ plainto_tsquery('english', ${query})`
+        : undefined;
+      const cursorClause = cursor ? lt(tweets.createdAt, cursor) : undefined;
 
-    const w = withMedia
-      ? {
-          media: {
-            columns: {
-              previewUrl: true,
-              type: true,
+      const w = withMedia
+        ? {
+            media: {
+              columns: {
+                previewUrl: true,
+                type: true,
+              },
             },
-          },
-        }
-      : undefined;
+          }
+        : undefined;
 
-    const tweetResults = await db?.query.tweets.findMany({
-      columns,
-      limit: pageSize,
-      where: and(cursorClause, whereClause, searchClause),
-      with: w,
-      orderBy: desc(tweets.createdAt),
-    });
+      const tweetResults = await db?.query.tweets.findMany({
+        columns,
+        limit: pageSize,
+        where: and(cursorClause, whereClause, searchClause),
+        with: w,
+        orderBy: desc(tweets.createdAt),
+      });
 
-    if (tweetResults && countResult) {
-      const countResults = await db
-        ?.select({ count: sql`count(*)`.mapWith(Number) })
-        .from(tweets)
-        .where(and(cursorClause, whereClause, searchClause));
+      if (tweetResults && countResult) {
+        const countResults = await db
+          ?.select({ count: sql`count(*)`.mapWith(Number) })
+          .from(tweets)
+          .where(and(cursorClause, whereClause, searchClause));
 
-      if (countResults?.[0].count) setTotalPossibleTweet(countResults[0].count);
+        if (countResults?.[0].count)
+          setTotalPossibleTweet(countResults[0].count);
 
-      // check if the tweet is completed
-      if (countResults?.[0].count === listTweet.length) return [];
-    }
+        if (countResults?.[0].count === listTweet.length) return [];
+      }
 
-    return tweetResults as any[];
-  };
+      return tweetResults as any[];
+    },
+    [getWhereClause, listTweet.length]
+  );
 
-  const selectAll = async () => {
+  const selectAll = useCallback(async () => {
     setLoadingState("select_all");
     let tweetIds: string[] = [];
     let cursor;
@@ -215,18 +213,18 @@ export default function Component() {
       setSelectedTweetId(tweetIds);
     }
     setLoadingState(null);
-  };
+  }, [getListTweet, query, totalPossibleTweet]);
 
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
     setSelectedTweetId([]);
-  };
+  }, []);
 
-  const loadMore = async () => {
+  const loadMore = useCallback(async () => {
     setLoadingState("pagination");
-    const lastTweet = listTweet[listTweet.length - 1]; // Get the last tweet for cursor
-    const res = await getListTweet(lastTweet.createdAt ?? undefined); // Pass the last tweet's createdAt as cursor
+    const lastTweet = listTweet[listTweet.length - 1];
+    const res = await getListTweet(lastTweet.createdAt ?? undefined);
     if (res) {
-      setListTweet([...listTweet, ...res]);
+      setListTweet((prev) => [...prev, ...res]);
     } else {
       notifications.show({
         title: "No more content",
@@ -234,15 +232,15 @@ export default function Component() {
       });
     }
     setLoadingState(null);
-  };
+  }, [getListTweet, listTweet]);
 
-  const applyFilter = async () => {
+  const applyFilter = useCallback(async () => {
     setLoadingState("filter");
     const res = await getListTweet();
     if (res) setListTweet(res);
     setLoadingState(null);
     closeFilter();
-  };
+  }, [getListTweet, closeFilter]);
 
   const handleSearch = useDebouncedCallback(async (keyword: string) => {
     if (keyword === "") {
@@ -254,18 +252,18 @@ export default function Component() {
     setListTweet([]);
     const res = await getListTweet(undefined, keyword);
     if (res) setListTweet(res);
-    clearAll(); // Reset select all state on new search
+    clearAll();
   }, 500);
 
-  const toggleTweetSelection = (tweetId: string) => {
+  const toggleTweetSelection = useCallback((tweetId: string) => {
     setSelectedTweetId((prev) =>
       prev.includes(tweetId)
         ? prev.filter((id) => id !== tweetId)
         : [...prev, tweetId]
     );
-  };
+  }, []);
 
-  const renderTweetTypeIcon = (type: string) => {
+  const renderTweetTypeIcon = useCallback((type: string) => {
     const iconProps = { style: { width: "70%", height: "70%" } };
     switch (type) {
       case "retweet":
@@ -275,16 +273,23 @@ export default function Component() {
       default:
         return <IconArticle {...iconProps} />;
     }
-  };
+  }, []);
 
-  const resetData = async () => {
+  const resetData = useCallback(async () => {
     setLoadingState("reset");
     const confirmation = confirm("Are you sure you want to reset all data?");
     if (!confirmation) return;
     await clear();
     setAppState("initial");
     setLoadingState(null);
-  };
+  }, [setAppState]);
+
+  useEffect(() => {
+    getListTweet().then((res) => {
+      if (res) setListTweet(res);
+      setLoadingState(null);
+    });
+  }, [getListTweet]);
 
   if (loadingState === "initial") {
     return (

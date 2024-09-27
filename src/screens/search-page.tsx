@@ -207,7 +207,9 @@ export default function Component() {
         false
       );
       if (res.length === 0 || tweetIds.length >= totalPossibleTweet) break;
-      tweetIds = tweetIds.concat(res);
+      tweetIds = Array.from(
+        new Set(tweetIds.concat(res.map((tweet) => tweet.id)))
+      );
       setSelectedTweetId(tweetIds);
       cursor = res[res.length - 1].createdAt;
     }

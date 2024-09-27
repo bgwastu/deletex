@@ -42,7 +42,7 @@ import {
 import { and, desc, eq, exists, gte, lt, lte, or, sql } from "drizzle-orm";
 import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
-
+const MAX_SELECTION = 500;
 const PAGE_SIZE = 20;
 const TWEET_TYPES = [
   { value: "tweet", label: "Post" },
@@ -55,12 +55,15 @@ export default function Component() {
     "initial" | "pagination" | "filter" | "reset" | "select_all" | null
   >(null);
   const [listTweet, setListTweet] = useState<TweetMedia[]>([]);
-  const [isSelectAll, setIsSelectAll] = useState(false);
   const [selectedTweetId, setSelectedTweetId] = useState<string[]>([]);
+  const isSelectAll =
+    listTweet.length > 0 &&
+    listTweet.every((tweet) => selectedTweetId.includes(tweet.id));
   const [query, setQuery] = useState("");
   const [filterOpened, { close: closeFilter, open: openFilter }] =
     useDisclosure(false);
   const setAppState = useSetAtom(appStateAtom);
+  const [totalPossibleTweet, setTotalPossibleTweet] = useState(0);
 
   const form = useForm({
     initialValues: {
@@ -137,37 +140,68 @@ export default function Component() {
     );
   };
 
-  const getListTweet = async (cursor?: Date, query?: string, columns?: any) => {
+  const getListTweet = async (
+    cursor?: Date,
+    query?: string,
+    columns?: any,
+    pageSize: number = PAGE_SIZE,
+    withMedia: boolean = true
+  ) => {
     const whereClause = getWhereClause();
     const searchClause = query
       ? sql`to_tsvector('english', ${tweets.text}) @@ plainto_tsquery('english', ${query})`
       : undefined;
     const cursorClause = cursor ? lt(tweets.createdAt, cursor) : undefined; // Change to use createdAt
 
+    const w = withMedia
+      ? {
+          media: {
+            columns: {
+              previewUrl: true,
+              type: true,
+            },
+          },
+        }
+      : undefined;
+
     const res = await db?.query.tweets.findMany({
       columns,
-      limit: PAGE_SIZE,
+      limit: pageSize,
       where: and(cursorClause, whereClause, searchClause),
-      with: { media: true },
+      with: w,
       orderBy: desc(tweets.createdAt),
     });
+
+    if (res) {
+      const res = await db
+        ?.select({ count: sql`count(*)`.mapWith(Number) })
+        .from(tweets)
+        .where(and(cursorClause, whereClause, searchClause));
+
+      if (res?.[0].count) setTotalPossibleTweet(res[0].count);
+    }
+
     return res as any[];
   };
 
   const selectAll = async () => {
     setLoadingState("select_all");
-    const tweetIds = await getListTweet(undefined, undefined, {
-      id: true,
-    });
+    const tweetIds = await getListTweet(
+      undefined,
+      query,
+      {
+        id: true,
+      },
+      MAX_SELECTION,
+      false
+    );
     if (tweetIds) {
       setSelectedTweetId(tweetIds.map((tweet) => tweet.id));
-      setIsSelectAll(true);
     }
     setLoadingState(null);
   };
 
   const clearAll = () => {
-    setIsSelectAll(false);
     setSelectedTweetId([]);
   };
 
@@ -376,7 +410,6 @@ export default function Component() {
                   onClick={isSelectAll ? clearAll : selectAll}
                   color={isSelectAll ? "red" : "brand"}
                   variant={isSelectAll ? "light" : "filled"}
-                  hidden={query !== ""}
                   loading={loadingState === "select_all"}
                 >
                   {isSelectAll ? "Clear all selection" : "Select all"}
@@ -384,7 +417,7 @@ export default function Component() {
                 <Text
                   c="dimmed"
                   size="sm"
-                >{`Selected: ${selectedTweetId.length} (Max: 10000)`}</Text>
+                >{`${selectedTweetId.length} of ${totalPossibleTweet}`}</Text>
               </Flex>
               <GenerateDeleteScriptButton tweetIds={selectedTweetId} />
             </Group>
@@ -518,7 +551,7 @@ export default function Component() {
         </Stack>
         <Button
           onClick={loadMore}
-          hidden={listTweet.length < 20}
+          hidden={totalPossibleTweet === listTweet.length}
           loading={loadingState === "pagination"}
         >
           Load more

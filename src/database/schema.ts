@@ -26,6 +26,7 @@ export const tweets = pgTable(
       "gin",
       sql`to_tsvector('english', ${table.text})`
     ),
+    typeIndex: index("type_index").on(table.type),
   })
 );
 
@@ -36,15 +37,21 @@ export const tweetRelations = relations(tweets, ({ many }) => ({
 export type Tweet = InferSelectModel<typeof tweets>;
 export type TweetMedia = Tweet & { media: Media[] };
 
-export const media = pgTable("media", {
-  id: varchar("id").primaryKey(),
-  tweetId: varchar("tweet_id").references(() => tweets.id, {
-    onDelete: "cascade",
-    onUpdate: "cascade",
-  }),
-  previewUrl: varchar("url"),
-  type: varchar("type"),
-});
+export const media = pgTable(
+  "media",
+  {
+    id: varchar("id").primaryKey(),
+    tweetId: varchar("tweet_id").references(() => tweets.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    previewUrl: varchar("url"),
+    type: varchar("type"),
+  },
+  (table) => ({
+    tweetIdIndex: index("tweet_id_index").on(table.tweetId),
+  })
+);
 
 export const mediaRelations = relations(media, ({ one }) => ({
   tweet: one(tweets, {

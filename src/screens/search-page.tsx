@@ -447,7 +447,10 @@ export default function SearchPage() {
                   size="sm"
                 >{`${selectedTweetId.length} of ${totalPossibleTweet} selected`}</Text>
               </Flex>
-              <GenerateDeleteScriptButton tweetIds={selectedTweetId} />
+              <GenerateDeleteScriptButton
+                tweetIds={selectedTweetId}
+                disabled={loadingState === "select_all"}
+              />
             </Group>
           )}
         </Stack>

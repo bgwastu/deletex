@@ -15,8 +15,10 @@ import { useState } from "react";
 
 export default function GenerateDeleteScriptButton({
   tweetIds,
+  disabled,
 }: {
   tweetIds: string[];
+  disabled?: boolean;
 }) {
   const [opened, { open, close }] = useDisclosure(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +74,7 @@ export default function GenerateDeleteScriptButton({
         leftSection={<IconFileTypeJs size={18} />}
         color="brand"
         loading={isLoading}
+        disabled={disabled}
       >
         Generate Delete Script
       </Button>

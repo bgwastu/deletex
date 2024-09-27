@@ -34,7 +34,7 @@ export default function InitialPage() {
       const MAX_INSERT_BATCH_SIZE = 1000;
       for (let i = 0; i < listTweet.length; i += MAX_INSERT_BATCH_SIZE) {
         await db
-          .insert(tweets)
+          ?.insert(tweets)
           .values(listTweet.slice(i, i + MAX_INSERT_BATCH_SIZE))
           .execute();
       }
@@ -52,7 +52,7 @@ export default function InitialPage() {
       // Chunk media for insertion
       for (let i = 0; i < mediaList.length; i += MAX_INSERT_BATCH_SIZE) {
         await db
-          .insert(media)
+          ?.insert(media)
           .values(mediaList.slice(i, i + MAX_INSERT_BATCH_SIZE))
           .execute();
       }

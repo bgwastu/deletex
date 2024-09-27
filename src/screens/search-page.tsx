@@ -1,7 +1,7 @@
 "use client";
 
 import GenerateDeleteScriptButton from "@/components/generate-delete-script-button";
-import { clear } from "@/database/db";
+import { clear, db } from "@/database/db";
 import { media, TweetMedia, tweets } from "@/database/schema";
 import { appStateAtom } from "@/state";
 import { css } from "@/styled-system/css";

@@ -1,6 +1,6 @@
 "use client";
 
-import { migrate } from "@/database/db";
+import { db, migrate } from "@/database/db";
 import InitialPage from "@/screens/initial-page";
 import SearchPage from "@/screens/search-page";
 import { appStateAtom } from "@/state";

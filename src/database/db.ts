@@ -1,26 +1,29 @@
+"use client";
+
 /* eslint-disable no-var */
 /* eslint-disable prefer-const */
 import { PGliteWorker } from "@electric-sql/pglite/worker";
 import { drizzle, PgliteDatabase } from "drizzle-orm/pglite";
 import * as schema from "./schema";
 
-declare global {
-  var db: PgliteDatabase<typeof schema> | undefined;
-  var client: PGliteWorker | undefined;
+let db: PgliteDatabase<typeof schema> | undefined;
+let client: PGliteWorker | undefined;
+
+if (typeof window !== "undefined") {
+  if (!client) {
+    client = new PGliteWorker(
+      new Worker(new URL("../pglite-worker.ts", import.meta.url), {
+        type: "module",
+      })
+    );
+  }
+
+  if (!db) {
+    db = drizzle(client as any, { schema });
+  }
 }
 
-if (!global.client)
-  global.client = new PGliteWorker(
-    new Worker(new URL("../app/pglite-worker.ts", import.meta.url), {
-      type: "module",
-    })
-  );
-export let client: PGliteWorker;
-client = global.client;
-
-if (!global.db) global.db = drizzle(client as any, { schema });
-export let db: PgliteDatabase<typeof schema>;
-db = global.db;
+export { db, client };
 
 /**
  * Executes the database migration.
@@ -61,7 +64,7 @@ CREATE INDEX IF NOT EXISTS "tweet_id_index" ON "media" USING btree ("tweet_id");
 CREATE INDEX IF NOT EXISTS "text_search_index" ON "tweets" USING gin (to_tsvector('english', "text"));--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "type_index" ON "tweets" USING btree ("type");`;
 
-  await client.exec(query);
+  await client?.exec(query);
 }
 
 /**
@@ -76,6 +79,6 @@ export async function clear() {
     END LOOP;
   END $$;
   `;
-  await client.exec(query);
+  await client?.exec(query);
   await migrate();
 }

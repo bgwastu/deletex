@@ -39,7 +39,7 @@ import {
   IconPlayerPlayFilled,
   IconRepeat,
 } from "@tabler/icons-react";
-import { and, desc, eq, exists, gte, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, exists, gte, lt, lte, or, sql } from "drizzle-orm";
 import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 
@@ -142,7 +142,7 @@ export default function Component() {
     const searchClause = query
       ? sql`to_tsvector('english', ${tweets.text}) @@ plainto_tsquery('english', ${query})`
       : undefined;
-    const cursorClause = cursor ? lte(tweets.createdAt, cursor) : undefined; // Change to use createdAt
+    const cursorClause = cursor ? lt(tweets.createdAt, cursor) : undefined; // Change to use createdAt
 
     const res = await db?.query.tweets.findMany({
       columns,

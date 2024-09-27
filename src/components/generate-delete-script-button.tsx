@@ -39,11 +39,15 @@ export default function GenerateDeleteScriptButton({
             <Text size="sm" c="dimmed">
               STEP 2
             </Text>
-            <Text>Paste the script into the console and press Enter.</Text>
+            <Text>
+              Copy and paste the script into the console and press Enter.
+            </Text>
           </Stack>
-          <ScrollArea h={300} type="always" scrollbars="y" offsetScrollbars>
-            <CodeHighlight code={generate(tweetIds)} language="js" w={580} />
-          </ScrollArea>
+          {tweetIds.length < 5000 ? (
+            <ScrollArea h={300} type="always" scrollbars="y" offsetScrollbars>
+              <CodeHighlight code={generate(tweetIds)} language="js" w={580} />
+            </ScrollArea>
+          ) : null}
           <CopyButton value={generate(tweetIds)}>
             {({ copied, copy }) => (
               <Button
@@ -53,7 +57,7 @@ export default function GenerateDeleteScriptButton({
                   copied ? <IconCheck size={14} /> : <IconCopy size={14} />
                 }
               >
-                {copied ? "Script Copied!" : "Copy to Clipboard"}
+                {copied ? "Script Copied!" : "Copy Script to Clipboard"}
               </Button>
             )}
           </CopyButton>

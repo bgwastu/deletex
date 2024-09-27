@@ -64,6 +64,7 @@ export default function Component() {
   const [totalPossibleTweet, setTotalPossibleTweet] = useState(0);
   const isSelectAll =
     (listTweet.length > 0 &&
+      loadingState === null &&
       listTweet.every((tweet) => selectedTweetId.includes(tweet.id))) ||
     selectedTweetId.length === totalPossibleTweet;
 

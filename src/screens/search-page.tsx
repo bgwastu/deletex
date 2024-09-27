@@ -33,6 +33,7 @@ import { notifications } from "@mantine/notifications";
 import {
   IconArticle,
   IconFilter,
+  IconFilterFilled,
   IconHeart,
   IconHeartFilled,
   IconMessage,
@@ -42,7 +43,6 @@ import {
 import { and, desc, eq, exists, gte, lt, lte, or, sql } from "drizzle-orm";
 import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
-const MAX_SELECTION = 500;
 const PAGE_SIZE = 20;
 const TWEET_TYPES = [
   { value: "tweet", label: "Post" },
@@ -56,14 +56,16 @@ export default function Component() {
   >(null);
   const [listTweet, setListTweet] = useState<TweetMedia[]>([]);
   const [selectedTweetId, setSelectedTweetId] = useState<string[]>([]);
-  const isSelectAll =
-    listTweet.length > 0 &&
-    listTweet.every((tweet) => selectedTweetId.includes(tweet.id));
+
   const [query, setQuery] = useState("");
   const [filterOpened, { close: closeFilter, open: openFilter }] =
     useDisclosure(false);
   const setAppState = useSetAtom(appStateAtom);
   const [totalPossibleTweet, setTotalPossibleTweet] = useState(0);
+  const isSelectAll =
+    (listTweet.length > 0 &&
+      listTweet.every((tweet) => selectedTweetId.includes(tweet.id))) ||
+    selectedTweetId.length === totalPossibleTweet;
 
   const form = useForm({
     initialValues: {
@@ -145,7 +147,8 @@ export default function Component() {
     query?: string,
     columns?: any,
     pageSize: number = PAGE_SIZE,
-    withMedia: boolean = true
+    withMedia: boolean = true,
+    countResult: boolean = true
   ) => {
     const whereClause = getWhereClause();
     const searchClause = query
@@ -164,7 +167,7 @@ export default function Component() {
         }
       : undefined;
 
-    const res = await db?.query.tweets.findMany({
+    const tweetResults = await db?.query.tweets.findMany({
       columns,
       limit: pageSize,
       where: and(cursorClause, whereClause, searchClause),
@@ -172,31 +175,45 @@ export default function Component() {
       orderBy: desc(tweets.createdAt),
     });
 
-    if (res) {
-      const res = await db
+    if (tweetResults && countResult) {
+      const countResults = await db
         ?.select({ count: sql`count(*)`.mapWith(Number) })
         .from(tweets)
         .where(and(cursorClause, whereClause, searchClause));
 
-      if (res?.[0].count) setTotalPossibleTweet(res[0].count);
+      if (countResults?.[0].count) setTotalPossibleTweet(countResults[0].count);
+
+      // check if the tweet is completed
+      if (countResults?.[0].count === listTweet.length) return [];
     }
 
-    return res as any[];
+    return tweetResults as any[];
   };
 
   const selectAll = async () => {
     setLoadingState("select_all");
-    const tweetIds = await getListTweet(
-      undefined,
-      query,
-      {
-        id: true,
-      },
-      MAX_SELECTION,
-      false
-    );
+    let tweetIds: string[] = [];
+    let cursor;
+    while (true) {
+      const res = await getListTweet(
+        cursor,
+        query,
+        {
+          id: true,
+          createdAt: true,
+        },
+        2000,
+        false,
+        false
+      );
+      if (res.length === 0 || tweetIds.length >= totalPossibleTweet) break;
+      tweetIds = tweetIds.concat(res);
+      setSelectedTweetId(tweetIds);
+      cursor = res[res.length - 1].createdAt;
+    }
+
     if (tweetIds) {
-      setSelectedTweetId(tweetIds.map((tweet) => tweet.id));
+      setSelectedTweetId(tweetIds);
     }
     setLoadingState(null);
   };
@@ -305,8 +322,14 @@ export default function Component() {
               <Popover.Target>
                 <Button
                   size="md"
-                  leftSection={<IconFilter size={14} />}
-                  variant="outline"
+                  leftSection={
+                    form.isDirty() ? (
+                      <IconFilterFilled size={18} />
+                    ) : (
+                      <IconFilter size={18} />
+                    )
+                  }
+                  variant={form.isDirty() ? "filled" : "outline"}
                   onClick={filterOpened ? closeFilter : openFilter}
                 >
                   Filter
@@ -334,6 +357,7 @@ export default function Component() {
                           <DatePickerInput
                             placeholder="To"
                             valueFormat="DD/MM/YYYY"
+                            maxDate={new Date()}
                             clearable
                             {...form.getInputProps("endDate")}
                           />
@@ -417,7 +441,7 @@ export default function Component() {
                 <Text
                   c="dimmed"
                   size="sm"
-                >{`${selectedTweetId.length} of ${totalPossibleTweet}`}</Text>
+                >{`${selectedTweetId.length} of ${totalPossibleTweet} selected`}</Text>
               </Flex>
               <GenerateDeleteScriptButton tweetIds={selectedTweetId} />
             </Group>
@@ -551,7 +575,9 @@ export default function Component() {
         </Stack>
         <Button
           onClick={loadMore}
-          hidden={totalPossibleTweet === listTweet.length}
+          hidden={
+            totalPossibleTweet === listTweet.length || listTweet.length === 0
+          }
           loading={loadingState === "pagination"}
         >
           Load more

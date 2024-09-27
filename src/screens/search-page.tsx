@@ -70,11 +70,7 @@ export default function Component() {
 
   const form = useForm({
     initialValues: {
-      tweetType: ["tweet", "retweet", "reply"] as (
-        | "retweet"
-        | "tweet"
-        | "reply"
-      )[],
+      tweetType: [] as ("retweet" | "tweet" | "reply")[],
       startDate: null as Date | null,
       endDate: null as Date | null,
       minLikes: null as number | null,

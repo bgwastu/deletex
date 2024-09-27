@@ -18,7 +18,7 @@ if (!global.client)
 export let client: PGliteWorker;
 client = global.client;
 
-if (!global.db) global.db = drizzle(client as any, { schema, logger: true });
+if (!global.db) global.db = drizzle(client as any, { schema });
 export let db: PgliteDatabase<typeof schema>;
 db = global.db;
 

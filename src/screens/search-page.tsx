@@ -1,9 +1,9 @@
 "use client";
 
+import Footer from "@/components/footer";
 import GenerateDeleteScriptButton from "@/components/generate-delete-script-button";
-import { clear, db } from "@/database/db";
+import { db } from "@/database/db";
 import { media, TweetMedia, tweets } from "@/database/schema";
-import { appStateAtom } from "@/state";
 import { css } from "@/styled-system/css";
 import {
   Anchor,
@@ -41,7 +41,6 @@ import {
   IconRepeat,
 } from "@tabler/icons-react";
 import { and, desc, eq, exists, gte, lt, lte, or, sql } from "drizzle-orm";
-import { useSetAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 const PAGE_SIZE = 20;
@@ -60,7 +59,6 @@ export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [filterOpened, { close: closeFilter, open: openFilter }] =
     useDisclosure(false);
-  const setAppState = useSetAtom(appStateAtom);
   const [totalPossibleTweet, setTotalPossibleTweet] = useState(0);
 
   const form = useForm({
@@ -274,15 +272,6 @@ export default function SearchPage() {
         return <IconArticle {...iconProps} />;
     }
   }, []);
-
-  const resetData = useCallback(async () => {
-    setLoadingState("reset");
-    const confirmation = confirm("Are you sure you want to reset all data?");
-    if (!confirmation) return;
-    await clear();
-    setAppState("initial");
-    setLoadingState(null);
-  }, [setAppState]);
 
   useEffect(() => {
     getListTweet().then((res) => {
@@ -590,9 +579,7 @@ export default function SearchPage() {
           Load more
         </Button>
       </Stack>
-      <Button variant="subtle" onClick={resetData} mt="xl" color="red">
-        Reset all the data
-      </Button>
+      <Footer />
     </Container>
   );
 }

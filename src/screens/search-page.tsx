@@ -278,7 +278,8 @@ export default function SearchPage() {
       if (res) setListTweet(res);
       setLoadingState(null);
     });
-  }, [getListTweet]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loadingState === "initial") {
     return (

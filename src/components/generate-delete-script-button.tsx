@@ -158,7 +158,7 @@ var TweetDeleter = {
 
         if (response.status == 200) {
           this.dCount++;
-          console.log("Deleted tweet ID: " + this.tId);
+          console.log("Deleted tweet ID: " + this.tId + " - " + this.tIds.length + " tweets remaining...");
         } else {
           console.log("Failed to delete tweet ID: " + this.tId, response);
         }

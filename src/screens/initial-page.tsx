@@ -1,114 +1,153 @@
 "use client";
 
+import DeleteXIcon from "@/components/deletex-icon";
 import DropzoneTweetJs from "@/components/dropzone-tweet-js";
-import { db } from "@/database/db";
-import { media, TweetMedia, tweets } from "@/database/schema";
-import { appStateAtom } from "@/state";
+import LanguageSelector from "@/components/language-selector";
+import type { TweetRecord } from "@/data/models";
+import { useI18n } from "@/i18n/locale-provider";
 import {
-  Button,
+  Alert,
+  Anchor,
+  Box,
   Container,
-  Divider,
-  List,
-  rem,
+  Group,
+  Paper,
+  SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
   Title,
 } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { IconCheck } from "@tabler/icons-react";
-import { useSetAtom } from "jotai";
-import { useState } from "react";
+import {
+  IconFilter,
+  IconSearch,
+  IconShieldLock,
+  IconTrashX,
+} from "@tabler/icons-react";
 
-export default function InitialPage() {
-  const [listTweet, setListTweet] = useState<TweetMedia[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const setAppState = useSetAtom(appStateAtom);
-
-  async function saveTweetsToDatabase() {
-    if (listTweet === null) return;
-    setLoading(true);
-
-    try {
-      // Chunk tweets for insertion
-      const MAX_INSERT_BATCH_SIZE = 1000;
-      for (let i = 0; i < listTweet.length; i += MAX_INSERT_BATCH_SIZE) {
-        await db
-          ?.insert(tweets)
-          .values(listTweet.slice(i, i + MAX_INSERT_BATCH_SIZE))
-          .execute();
-      }
-
-      // insert media
-      const mediaList = listTweet
-        .map((tweet) => tweet.media)
-        .flat()
-        // filter duplicate media
-        .filter(
-          (media, index, self) =>
-            index === self.findIndex((t) => t.id === media.id)
-        );
-
-      // Chunk media for insertion
-      for (let i = 0; i < mediaList.length; i += MAX_INSERT_BATCH_SIZE) {
-        await db
-          ?.insert(media)
-          .values(mediaList.slice(i, i + MAX_INSERT_BATCH_SIZE))
-          .execute();
-      }
-
-      notifications.show({
-        title: "Success",
-        message: "Tweets imported successfully",
-      });
-      setAppState("ready");
-    } catch (e: any) {
-      console.error("Insertion error:", e);
-      notifications.show({
-        title: "Error",
-        message: "Failed to save data to database. See console for details.",
-        color: "red",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
+export default function InitialPage({
+  hasLegacyData,
+  onImport,
+}: {
+  hasLegacyData: boolean;
+  onImport: (tweets: TweetRecord[]) => Promise<void>;
+}) {
+  const { t } = useI18n();
 
   return (
-    <Container component="main" my="xl" size="sm">
-      <Stack>
-        <Stack gap="xs">
-          <Title>DeleteX</Title>
-          <Text>Selectively delete your content on X (formerly Twitter).</Text>
-        </Stack>
-        <Stack gap="xs">
-          <Title order={2}>Features</Title>
-          <List
-            spacing="xs"
+    <Container component="main" py={{ base: "md", sm: "xl" }} size="md">
+      <Stack gap="xl">
+        <Group justify="space-between" align="center">
+          <DeleteXIcon size={40} />
+          <LanguageSelector />
+        </Group>
+
+        <Paper withBorder bg="white" style={{ overflow: "hidden" }}>
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={0}>
+            <Box bg="brand.9" p={{ base: "lg", sm: 40 }} mih={{ md: 540 }}>
+              <Stack h="100%" justify="space-between" gap={48}>
+                <Stack gap="md">
+                  <Title
+                    order={1}
+                    c="white"
+                    fz={{ base: 30, sm: 44 }}
+                    lh={1.06}
+                  >
+                    {t("description")}
+                  </Title>
+                  <Text fz={{ base: "md", sm: "lg" }} c="brand.1" maw={520}>
+                    {t("landingLead")}
+                  </Text>
+                </Stack>
+
+                <Stack gap="md" visibleFrom="md">
+                  <Text fw={700} c="white">
+                    {t("features")}
+                  </Text>
+                  {[
+                    { icon: IconSearch, text: t("featureSearch") },
+                    { icon: IconFilter, text: t("featureFilter") },
+                    { icon: IconTrashX, text: t("featureDelete") },
+                  ].map(({ icon: Icon, text }) => (
+                    <Group key={text} gap="sm" wrap="nowrap" align="flex-start">
+                      <ThemeIcon bg="brand.8" c="white" size="lg">
+                        <Icon size={18} />
+                      </ThemeIcon>
+                      <Text size="sm" c="brand.1" lh={1.35}>
+                        {text}
+                      </Text>
+                    </Group>
+                  ))}
+                </Stack>
+              </Stack>
+            </Box>
+
+            <Box p={{ base: "lg", sm: 40 }}>
+              <Stack gap="md">
+                <Stack gap={4}>
+                  <Title order={2} fz={{ base: 26, sm: 32 }}>
+                    {t("startWithArchive")}
+                  </Title>
+                  <Text size="sm" c="brand.7">
+                    {t("archivePanelHelp")}
+                  </Text>
+                </Stack>
+                {hasLegacyData && (
+                  <Alert color="blue">{t("legacyArchive")}</Alert>
+                )}
+                <DropzoneTweetJs onImport={onImport} />
+                <Group gap="xs" wrap="nowrap" align="flex-start" bg="brand.0">
+                  <ThemeIcon variant="light" color="brand" size="lg">
+                    <IconShieldLock size={19} />
+                  </ThemeIcon>
+                  <Text size="sm" c="brand.7">
+                    {t("localOnly")}
+                  </Text>
+                </Group>
+                <Stack gap="sm" hiddenFrom="md">
+                  <Text fw={700}>{t("features")}</Text>
+                  {[
+                    { icon: IconSearch, text: t("featureSearch") },
+                    { icon: IconFilter, text: t("featureFilter") },
+                    { icon: IconTrashX, text: t("featureDelete") },
+                  ].map(({ icon: Icon, text }) => (
+                    <Group key={text} gap="sm" wrap="nowrap" align="flex-start">
+                      <ThemeIcon variant="light" color="brand" size="lg">
+                        <Icon size={18} />
+                      </ThemeIcon>
+                      <Text size="sm" lh={1.35}>
+                        {text}
+                      </Text>
+                    </Group>
+                  ))}
+                </Stack>
+              </Stack>
+            </Box>
+          </SimpleGrid>
+        </Paper>
+
+        <Group justify="center">
+          <Anchor
+            href="https://github.com/bgwastu/deletex"
+            target="_blank"
+            rel="noreferrer"
+            c="brand.7"
             size="sm"
-            center
-            icon={
-              <ThemeIcon color="blue" size={24} radius="xl">
-                <IconCheck style={{ width: rem(16), height: rem(16) }} />
-              </ThemeIcon>
-            }
           >
-            <List.Item>
-              Deleting content using scripts (no auth/token required)
-            </List.Item>
-            <List.Item>
-              Powerful filtering options (date, media, etc.)
-            </List.Item>
-            <List.Item>Full-text search</List.Item>
-          </List>
-        </Stack>
-        <Divider my="sm" />
-        <DropzoneTweetJs setTweets={setListTweet} tweets={listTweet} />
-        {listTweet !== null && (
-          <Button size="md" onClick={saveTweetsToDatabase} loading={loading}>
-            Continue
-          </Button>
-        )}
+            <Group component="span" gap={6} wrap="nowrap">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="currentColor"
+              >
+                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+              </svg>
+              github.com/bgwastu/deletex
+            </Group>
+          </Anchor>
+        </Group>
       </Stack>
     </Container>
   );

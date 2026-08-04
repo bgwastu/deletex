@@ -1,19 +1,24 @@
 # DeleteX
 
-A web application that allows you to delete content on X (formerly known as Twiter) without having to log in or giving any third-party app access to your account.
+DeleteX is a local-first web application for reviewing an X archive, filtering posts, and generating an experimental browser script for selected deletions.
 
-See it in action at [deletex.wastu.net](https://deletex.wastu.net).
+See it at [deletex.wastu.net](https://deletex.wastu.net).
 
 ## Features
 
-* Delete all type of content on X (post, repost, and comments)
-* Powerful filtering options (date range, content type, min/max likes, min/max reposts, etc.)
-* Full-text search
-
-## How it works
-
-DeleteX uses your X archive data to generate a userscript that you can run in your browser to delete your tweets. The script will run in your browser and will only delete the tweets you selected.
+- Import `tweets.js` from an X archive
+- Search and filter posts, reposts, and replies
+- Keep selected posts while searching and filtering
+- Confirm selected posts in a guided deletion workflow
+- English and Bahasa Indonesia interface
+- Local IndexedDB storage with complete browser-data removal
 
 ## Privacy
 
-DeleteX uses [PGLite](https://pglite.dev) as local storage to store your X archive data and the generated userscript. This means that your data is processed locally and never leaves your device.
+Archive content is parsed and stored in IndexedDB in the user's browser. DeleteX does not upload archive content and includes no analytics SDK.
+
+## Deletion Notice
+
+The generated browser script uses X's internal web operations and is experimental. X prohibits non-API website automation, may change these operations without notice, and may restrict accounts that use them. Deleted posts cannot be recovered.
+
+For a supported integration, use X OAuth and the official Delete Post API.

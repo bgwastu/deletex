@@ -2,10 +2,13 @@
 @import url("@mantine/dropzone/styles.css");
 @import url("@mantine/notifications/styles.css");
 @import url("@mantine/dates/styles.css");
-@import url("@mantine/code-highlight/styles.css");
-
-@layer reset, base, tokens, recipes, utilities;
 
 body {
   background-color: var(--mantine-color-brand-0);
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
